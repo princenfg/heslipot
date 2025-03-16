@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // Dropdown Menu Functionality
+    const menuButton = document.querySelector(".account-btn");
+    const dropdownContent = document.querySelector(".dropdown-content");
+
+    if (menuButton) {
+        menuButton.addEventListener("click", function () {
+            dropdownContent.style.display = dropdownContent.style.display === "block" ? "none" : "block";
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener("click", function (event) {
+            if (!menuButton.contains(event.target) && !dropdownContent.contains(event.target)) {
+                dropdownContent.style.display = "none";
+            }
+        });
+    }
+
     // Check if the user is logged in
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     const role = localStorage.getItem("role");
