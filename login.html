@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Heslipot</title>
+    <link rel="stylesheet" href="login.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html">
+                <img src="pics/logo.png" alt="Heslipot Logo">
+            </a>
+        </div>
+    </header>
+    
+    <section class="login-section">
+        <h2>Login to Your Account</h2>
+        <form class="login-form" id="loginForm">
+            <label for="username">Email or phone:</label>
+            <input type="text" id="username" name="username" required>
+        
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        
+            <label for="role">Role:</label>
+            <select id="role" name="role" required>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        
+            <button type="submit" class="btn">Login</button>
+        </form>
+        <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+    </section>
+    
+    <footer>
+        <p>Contact us: <a href="mailto:info@heslipot.com">info@heslipot.com</a></p>
+        <p>&copy; 2025 Heslipot. All rights reserved.</p>
+    </footer>
+</body>
+</html>

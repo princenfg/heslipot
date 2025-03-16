@@ -1,0 +1,149 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #e3f2fd; /* Light Blue Theme */
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Hide upload section for non-admin users */
+#uploadSection {
+    display: none;
+}
+
+/* Admin-specific styles */
+body.admin #uploadSection {
+    display: block;
+}
+
+/* Competitor list styling */
+#competitorContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+.competitor {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 250px; /* Fixed width for each competitor */
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+    flex: 0 0 auto; /* Prevent flex items from growing or shrinking */
+}
+
+.competitor:hover {
+    transform: scale(1.05);
+}
+
+.competitor img {
+    width: 100%;
+    border-radius: 10px;
+    height: 200px;
+    object-fit: cover;
+}
+
+.vote-btn {
+    margin-top: 10px;
+    background-color: #ff9800;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+.vote-btn:hover {
+    background-color: #e68900;
+}
+
+header {
+    background-color: #3b76b9;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.logo img {
+    max-width: 200px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.logo img:hover {
+    transform: scale(1.1);
+}
+
+h1 {
+    font-size: 2.5em;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #1e88e5;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+    transition: background-color 0.3s, transform 0.3s;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background-color: #1565c0;
+    transform: scale(1.05);
+}
+
+.competitor-upload, .competitor-list {
+    background-color: white;
+    margin: 20px auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input, textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+button {
+    background-color: #1565c0;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0d47a1;
+}
+
+footer {
+    background-color: #3b76b9;
+    color: white;
+    padding: 10px;
+    margin-top: 20px;
+}

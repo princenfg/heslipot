@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Heslipot</title>
+    <link rel="stylesheet" href="admin.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html">
+                <img src="pics/logo.png" alt="Heslipot Logo">
+            </a>
+        </div>
+        <h1>Admin Panel</h1>
+        <a href="index.html" class="btn">Back to Home</a>
+    </header>
+
+    <section class="admin-section">
+        <h2>Pending Competitors</h2>
+        <div id="pendingCompetitorContainer">
+            <!-- Pending competitors will be listed here -->
+        </div>
+    </section>
+
+    <section class="admin-section">
+        <h2>Approved Competitors</h2>
+        <div class="approved-container">
+            <h3>Youth Category</h3>
+            <div id="approvedYouth"></div>
+
+            <h3>Women Category</h3>
+            <div id="approvedWomen"></div>
+
+            <h3>Chefs Category</h3>
+            <div id="approvedChefs"></div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Heslipot. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chefs Category - Heslipot Competition</title>
+    <link rel="stylesheet" href="chefs.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html">
+                <img src="pics/logo.png" alt="Heslipot Logo">
+            </a>
+        </div>
+        <h1>Chefs Category</h1>
+        <a href="index.html" class="btn">Back to Home</a>
+    </header>
+    
+    <section class="competitor-upload" id="uploadSection">
+        <h2>Upload Competitor Details</h2>
+        <form id="uploadForm">
+            <label for="name">Competitor Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="image">Upload Image:</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
+
+            <label for="description">Brief Description:</label>
+            <textarea id="description" name="description" required></textarea>
+
+            <button type="submit" class="btn">Upload</button>
+        </form>
+    </section>
+    
+    <section class="competitor-list">
+        <h2>Vote for Your Favorite Competitor</h2>
+        <div id="competitorContainer">
+            <!-- Competitors will be dynamically added here -->
+        </div>
+    </section>
+    
+    <footer>
+        <p>&copy; 2025 Heslipot. All rights reserved.</p>
+    </footer>
+</body>
+</html>
