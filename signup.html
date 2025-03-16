@@ -9,22 +9,12 @@
 </head>
 <body>
     <header>
-        <header>
-            <div class="logo">
-                <a href="index.html">
-                    <img src="pics/logo.png" alt="Heslipot Logo">
-                </a>
-            </div>
-            <a href="#cat" class="cat-btn">Categories</a>
-            <a href="#abt" class="abt-btn">About</a>
-            <div class="account-dropdown">
-                <button class="account-btn">Account</button>
-                <div class="dropdown-content">
-                    <a href="login.html" id="loginLink">Login</a>
-                    <a href="#" id="logoutLink" style="display: none;">Logout</a>
-                </div>
-            </div>
-        </header>
+        <div class="logo">
+            <a href="index.html">
+                <img src="pics/logo.png" alt="Heslipot Logo">
+            </a>
+        </div>
+    </header>
     
     <section class="login-section">
         <h2>Sign Up for an Account</h2>
@@ -34,12 +24,6 @@
         
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
-        
-            <label for="role">Role:</label>
-            <select id="role" name="role" required>
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-            </select>
         
             <button type="submit" class="btn">Sign Up</button>
         </form>

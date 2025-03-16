@@ -1,3 +1,10 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Supabase setup
+const SUPABASE_URL = "https://qbirnioxxrgcnuyblvym.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiaXJuaW94eHJnY251eWJsdnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMzY4NjEsImV4cCI6MjA1NzcxMjg2MX0.6Qvafe5xmyFGw39BhtPo5Mxk78Xdu28Nn1S4xt_tHaw";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 document.addEventListener("DOMContentLoaded", function () {
     // Dropdown Menu Functionality
     const menuButton = document.querySelector(".account-btn");
@@ -44,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
             localStorage.removeItem("isLoggedIn");
             localStorage.removeItem("role");
+            localStorage.removeItem("userId"); // Clear user ID on logout
             localStorage.removeItem("votedCompetitors"); // Clear voting history on logout
             window.location.href = "index.html"; // Redirect to home page after logout
         });
@@ -52,57 +60,68 @@ document.addEventListener("DOMContentLoaded", function () {
     // Handle login form submission
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
-        loginForm.addEventListener("submit", function (event) {
+        loginForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const username = document.getElementById("username").value;
+            const email = document.getElementById("username").value;
             const password = document.getElementById("password").value;
-            const role = document.getElementById("role").value;
 
-            // Simulate login validation
-            if ((username === "admin" && password === "admin123") || (username === "user" && password === "user123")) {
+            // Hardcoded admin credentials
+            if (email === "heslipotadmin" && password === "hesliadmin123") {
                 localStorage.setItem("isLoggedIn", true);
-                localStorage.setItem("role", role);
+                localStorage.setItem("role", "admin");
+                localStorage.setItem("userId", "admin"); // Admin user ID
                 window.location.href = "thankyou.html?action=login"; // Redirect to thank you page
-            } else {
-                alert("Invalid credentials.");
+                return;
             }
+
+            // Check user credentials in Supabase for regular users
+            const { data: user, error } = await supabase
+                .from("users")
+                .select("*")
+                .eq("email", email)
+                .eq("password", password)
+                .single();
+
+            if (error || !user) {
+                alert("Invalid credentials.");
+                return;
+            }
+
+            // Log in the user
+            localStorage.setItem("isLoggedIn", true);
+            localStorage.setItem("role", "user");
+            localStorage.setItem("userId", user.id); // Store user ID
+            window.location.href = "thankyou.html?action=login"; // Redirect to thank you page
         });
     }
 
     // Handle signup form submission
     const signupForm = document.getElementById("signupForm");
     if (signupForm) {
-        signupForm.addEventListener("submit", function (event) {
+        signupForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-            const phone = document.getElementById("phone").value;
-            const category = document.getElementById("category").value;
-            const imageFile = document.getElementById("image").files[0];
-            const description = document.getElementById("description").value;
+            const email = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const competitor = {
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    category: category,
-                    image: e.target.result,
-                    description: description,
-                    votes: 0
-                };
+            // Insert user data into Supabase database (users table)
+            const { data: user, error } = await supabase
+                .from("users")
+                .insert([
+                    {
+                        email,
+                        password, // Note: In a real application, hash the password before storing it
+                        role: "user", // Default role for new users
+                    },
+                ]);
 
-                let pendingCompetitors = JSON.parse(localStorage.getItem("pendingCompetitors")) || [];
-                pendingCompetitors.push(competitor);
-                localStorage.setItem("pendingCompetitors", JSON.stringify(pendingCompetitors));
-
-                alert("Registration submitted! Awaiting admin approval.");
-                signupForm.reset();
-            };
-            reader.readAsDataURL(imageFile);
+            if (error) {
+                alert("Error signing up: " + error.message);
+            } else {
+                alert("Signup successful! Please log in.");
+                window.location.href = "login.html"; // Redirect to login page
+            }
         });
     }
 
@@ -133,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Handle competitor upload form submission (for admins)
     const uploadForm = document.getElementById("uploadForm");
     if (uploadForm) {
-        uploadForm.addEventListener("submit", function (event) {
+        uploadForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
             const name = document.getElementById("name").value;
@@ -143,21 +162,37 @@ document.addEventListener("DOMContentLoaded", function () {
             // Get the current category from the page URL
             const category = window.location.pathname.split("/").pop().replace(".html", "");
 
-            // Read the image file and convert it to a data URL
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const competitor = {
-                    name: name,
-                    image: e.target.result,
-                    description: description,
-                    votes: 0 // Initialize vote count to 0
-                };
+            // Upload image to Supabase Storage
+            const { data: imageData, error: imageError } = await supabase.storage
+                .from("competitor-images")
+                .upload(`competitors/${Date.now()}_${image.name}`, image);
 
-                // Save competitor to local storage under the specific category
-                let competitors = JSON.parse(localStorage.getItem(`competitors_${category}`)) || [];
-                competitors.push(competitor);
-                localStorage.setItem(`competitors_${category}`, JSON.stringify(competitors));
+            if (imageError) {
+                alert("Error uploading image: " + imageError.message);
+                return;
+            }
 
+            // Get public URL of the uploaded image
+            const { data: imageUrl } = supabase.storage
+                .from("competitor-images")
+                .getPublicUrl(imageData.path);
+
+            // Insert competitor data into Supabase database (competitors table)
+            const { data: competitor, error: dbError } = await supabase
+                .from("competitors")
+                .insert([
+                    {
+                        name,
+                        description,
+                        category,
+                        image_url: imageUrl.publicUrl,
+                        votes: 0,
+                    },
+                ]);
+
+            if (dbError) {
+                alert("Error saving competitor: " + dbError.message);
+            } else {
                 alert("Competitor uploaded successfully!");
                 uploadForm.reset();
 
@@ -165,77 +200,114 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (document.getElementById("competitorContainer")) {
                     loadCompetitors(category);
                 }
-            };
-            reader.readAsDataURL(image);
+            }
         });
     }
 
     // Load competitors for voting
-    function loadCompetitors(category) {
+    async function loadCompetitors(category) {
         const competitorContainer = document.getElementById("competitorContainer");
         if (competitorContainer) {
             competitorContainer.innerHTML = ""; // Clear existing content
 
-            // Load competitors for the specific category
-            const competitors = JSON.parse(localStorage.getItem(`competitors_${category}`)) || [];
+            // Fetch competitors for the specific category
+            const { data: competitors, error } = await supabase
+                .from("competitors")
+                .select("*")
+                .eq("category", category);
 
-            competitors.forEach((competitor, index) => {
+            if (error) {
+                console.error("Error fetching competitors:", error.message);
+                return;
+            }
+
+            // Display each competitor
+            competitors.forEach((competitor) => {
                 const competitorDiv = document.createElement("div");
                 competitorDiv.className = "competitor";
                 competitorDiv.innerHTML = `
-                    <img src="${competitor.image}" alt="${competitor.name}">
+                    <img src="${competitor.image_url}" alt="${competitor.name}">
                     <h3>${competitor.name}</h3>
                     <p>${competitor.description}</p>
                     <p>Votes: ${competitor.votes}</p>
-                    <button class="btn vote-btn" data-index="${index}" data-category="${category}">Vote</button>
+                    <button class="btn vote-btn" data-id="${competitor.id}" data-category="${category}">Vote</button>
                 `;
                 competitorContainer.appendChild(competitorDiv);
             });
 
             // Add event listeners to vote buttons
-            const voteButtons = document.querySelectorAll(".vote-btn");
-            voteButtons.forEach(button => {
-                button.addEventListener("click", function () {
-                    const index = button.getAttribute("data-index");
+            document.querySelectorAll(".vote-btn").forEach(button => {
+                button.addEventListener("click", async function () {
+                    const competitorId = button.getAttribute("data-id");
                     const category = button.getAttribute("data-category");
-                    voteForCompetitor(index, category);
+                    await voteForCompetitor(competitorId, category);
                 });
             });
         }
     }
 
     // Handle voting for a competitor
-    function voteForCompetitor(index, category) {
-        // Check if the user has already voted in this category
-        const votedCompetitors = JSON.parse(localStorage.getItem("votedCompetitors")) || {};
-        const userId = localStorage.getItem("userId"); // Unique identifier for the user
+    async function voteForCompetitor(competitorId, category) {
+        const userId = localStorage.getItem("userId");
 
         if (!userId) {
             alert("Please log in to vote.");
             return;
         }
 
-        if (votedCompetitors[userId] && votedCompetitors[userId][category]) {
+        // Check if the user has already voted in this category
+        const { data: votedCompetitors, error: fetchError } = await supabase
+            .from("voted_competitors")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("category", category);
+
+        if (fetchError) {
+            console.error("Error fetching voting history:", fetchError.message);
+            return;
+        }
+
+        if (votedCompetitors.length > 0) {
             alert("You have already voted in this category.");
             return;
         }
 
-        // Update the vote count
-        let competitors = JSON.parse(localStorage.getItem(`competitors_${category}`)) || [];
-        if (competitors[index]) {
-            competitors[index].votes = (competitors[index].votes || 0) + 1;
-            localStorage.setItem(`competitors_${category}`, JSON.stringify(competitors));
+        // Increment the vote count for the competitor
+        const { data: competitor, error: voteError } = await supabase
+            .from("competitors")
+            .select("votes")
+            .eq("id", competitorId)
+            .single();
 
-            // Record the vote in the user's voting history
-            if (!votedCompetitors[userId]) {
-                votedCompetitors[userId] = {};
-            }
-            votedCompetitors[userId][category] = true; // Mark the category as voted
-            localStorage.setItem("votedCompetitors", JSON.stringify(votedCompetitors));
-
-            alert("Thank you for voting!");
-            loadCompetitors(category); // Refresh the competitor list
+        if (voteError) {
+            alert("Error fetching competitor: " + voteError.message);
+            return;
         }
+
+        const newVotes = competitor.votes + 1;
+
+        const { error: updateError } = await supabase
+            .from("competitors")
+            .update({ votes: newVotes })
+            .eq("id", competitorId);
+
+        if (updateError) {
+            alert("Error updating vote count: " + updateError.message);
+            return;
+        }
+
+        // Record the vote in the user's voting history
+        const { error: historyError } = await supabase
+            .from("voted_competitors")
+            .insert([{ user_id: userId, category }]);
+
+        if (historyError) {
+            alert("Error recording vote: " + historyError.message);
+            return;
+        }
+
+        alert("Thank you for voting!");
+        loadCompetitors(category); // Refresh the competitor list
     }
 
     // Load competitors when the page loads
@@ -247,44 +319,94 @@ document.addEventListener("DOMContentLoaded", function () {
     // Admin panel: display pending competitors
     const pendingCompetitorContainer = document.getElementById("pendingCompetitorContainer");
     if (pendingCompetitorContainer) {
-        function loadPendingCompetitors() {
+        async function loadPendingCompetitors() {
             pendingCompetitorContainer.innerHTML = ""; // Clear existing content
-            const pendingCompetitors = JSON.parse(localStorage.getItem("pendingCompetitors")) || [];
 
-            pendingCompetitors.forEach((competitor, index) => {
+            // Fetch pending competitors from Supabase
+            const { data: pendingCompetitors, error } = await supabase
+                .from("pending_competitors")
+                .select("*");
+
+            if (error) {
+                console.error("Error fetching pending competitors:", error.message);
+                return;
+            }
+
+            // Display each pending competitor
+            pendingCompetitors.forEach((competitor) => {
                 const div = document.createElement("div");
                 div.className = "competitor";
                 div.innerHTML = `
-                    <img src="${competitor.image}" alt="${competitor.name}">
+                    <img src="${competitor.image_url}" alt="${competitor.name}">
                     <h3>${competitor.name}</h3>
                     <p>${competitor.description}</p>
                     <p>Category: ${competitor.category}</p>
-                    <button class="btn approve-btn" data-index="${index}">Approve</button>
-                    <button class="btn delete-btn" data-index="${index}">Delete</button>
+                    <button class="btn approve-btn" data-id="${competitor.id}">Approve</button>
+                    <button class="btn delete-btn" data-id="${competitor.id}">Delete</button>
                 `;
                 pendingCompetitorContainer.appendChild(div);
             });
 
+            // Add event listeners for approve and delete buttons
             document.querySelectorAll(".approve-btn").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    const index = btn.getAttribute("data-index");
-                    const pendingCompetitors = JSON.parse(localStorage.getItem("pendingCompetitors")) || [];
-                    const competitor = pendingCompetitors.splice(index, 1)[0];
-                    let competitors = JSON.parse(localStorage.getItem(`competitors_${competitor.category}`)) || [];
-                    competitors.push(competitor);
-                    localStorage.setItem(`competitors_${competitor.category}`, JSON.stringify(competitors));
-                    localStorage.setItem("pendingCompetitors", JSON.stringify(pendingCompetitors));
-                    loadPendingCompetitors();
+                btn.addEventListener("click", async function () {
+                    const competitorId = btn.getAttribute("data-id");
+
+                    // Fetch the competitor from pending_competitors
+                    const { data: competitor, error: fetchError } = await supabase
+                        .from("pending_competitors")
+                        .select("*")
+                        .eq("id", competitorId)
+                        .single();
+
+                    if (fetchError) {
+                        alert("Error fetching competitor: " + fetchError.message);
+                        return;
+                    }
+
+                    // Insert the competitor into the approved competitors table
+                    const { error: insertError } = await supabase
+                        .from("competitors")
+                        .insert([competitor]);
+
+                    if (insertError) {
+                        alert("Error approving competitor: " + insertError.message);
+                        return;
+                    }
+
+                    // Delete the competitor from pending_competitors
+                    const { error: deleteError } = await supabase
+                        .from("pending_competitors")
+                        .delete()
+                        .eq("id", competitorId);
+
+                    if (deleteError) {
+                        alert("Error deleting pending competitor: " + deleteError.message);
+                        return;
+                    }
+
+                    alert("Competitor approved successfully!");
+                    loadPendingCompetitors(); // Refresh the list
                 });
             });
 
             document.querySelectorAll(".delete-btn").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    const index = btn.getAttribute("data-index");
-                    const pendingCompetitors = JSON.parse(localStorage.getItem("pendingCompetitors")) || [];
-                    pendingCompetitors.splice(index, 1);
-                    localStorage.setItem("pendingCompetitors", JSON.stringify(pendingCompetitors));
-                    loadPendingCompetitors();
+                btn.addEventListener("click", async function () {
+                    const competitorId = btn.getAttribute("data-id");
+
+                    // Delete the competitor from pending_competitors
+                    const { error } = await supabase
+                        .from("pending_competitors")
+                        .delete()
+                        .eq("id", competitorId);
+
+                    if (error) {
+                        alert("Error deleting competitor: " + error.message);
+                        return;
+                    }
+
+                    alert("Competitor deleted successfully!");
+                    loadPendingCompetitors(); // Refresh the list
                 });
             });
         }
@@ -298,25 +420,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const approvedChefs = document.getElementById("approvedChefs");
 
     if (approvedYouth && approvedWomen && approvedChefs) {
-        function loadApprovedCompetitors() {
+        async function loadApprovedCompetitors() {
             approvedYouth.innerHTML = "";
             approvedWomen.innerHTML = "";
             approvedChefs.innerHTML = "";
 
             const categories = ["youth", "women", "chefs"];
-            categories.forEach(category => {
-                const competitors = JSON.parse(localStorage.getItem(`competitors_${category}`)) || [];
+            for (const category of categories) {
+                // Fetch approved competitors for the category
+                const { data: competitors, error } = await supabase
+                    .from("competitors")
+                    .select("*")
+                    .eq("category", category);
+
+                if (error) {
+                    console.error(`Error fetching ${category} competitors:`, error.message);
+                    continue;
+                }
+
                 const container = category === "youth" ? approvedYouth : category === "women" ? approvedWomen : approvedChefs;
 
-                competitors.forEach((competitor, index) => {
+                competitors.forEach((competitor) => {
                     const div = document.createElement("div");
                     div.className = "competitor";
                     div.innerHTML = `
-                        <img src="${competitor.image}" alt="${competitor.name}">
+                        <img src="${competitor.image_url}" alt="${competitor.name}">
                         <h3>${competitor.name}</h3>
                         <p>${competitor.description}</p>
                         <p>Votes: ${competitor.votes}</p>
-                        ${role === "admin" ? `<button class="btn delete-btn" data-category="${category}" data-index="${index}">Delete</button>` : ''}
+                        ${role === "admin" ? `<button class="btn delete-btn" data-id="${competitor.id}">Delete</button>` : ''}
                     `;
                     container.appendChild(div);
                 });
@@ -324,26 +456,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Add event listeners to delete buttons for approved competitors
                 const deleteButtons = container.querySelectorAll(".delete-btn");
                 deleteButtons.forEach(button => {
-                    button.addEventListener("click", function () {
-                        const category = button.getAttribute("data-category");
-                        const index = button.getAttribute("data-index");
-                        deleteApprovedCompetitor(category, index);
+                    button.addEventListener("click", async function () {
+                        const competitorId = button.getAttribute("data-id");
+
+                        // Delete the competitor from the approved table
+                        const { error } = await supabase
+                            .from("competitors")
+                            .delete()
+                            .eq("id", competitorId);
+
+                        if (error) {
+                            alert("Error deleting competitor: " + error.message);
+                            return;
+                        }
+
+                        alert("Competitor deleted successfully!");
+                        loadApprovedCompetitors(); // Refresh the list
                     });
                 });
-            });
+            }
         }
 
         loadApprovedCompetitors();
-    }
-
-    // Function to delete approved competitors
-    function deleteApprovedCompetitor(category, index) {
-        let competitors = JSON.parse(localStorage.getItem(`competitors_${category}`)) || [];
-        if (competitors[index]) {
-            competitors.splice(index, 1); // Remove the competitor
-            localStorage.setItem(`competitors_${category}`, JSON.stringify(competitors)); // Update storage
-            alert("Competitor deleted successfully!");
-            loadApprovedCompetitors(); // Refresh the list
-        }
     }
 });
